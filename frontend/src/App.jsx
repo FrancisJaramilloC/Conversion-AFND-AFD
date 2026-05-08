@@ -1,50 +1,16 @@
 import { useState, useEffect } from 'react';
 import './index.css';
+import { EXERCISES } from './data/exercises';
 
-const API_BASE = 'http://localhost:8080/api/automata/evaluate';
-
-const EXERCISES = [
-  { 
-    id: 1, 
-    title: 'IDS - Detección de Ataques',
-    description: 'Se busca detectar un patrón específico de ataque: Un intento de conexión (s), seguido de uno o más respuestas (a), y un reset abrupto (r).',
-    alphabet: '{s, a, r}',
-    states: '{q0, q1, q2, q3}',
-    initial: 'q0',
-    final: '{q3}',
-    placeholder: 'Ej: saar',
-    examples: "Ingresa la secuencia de logs. Ejemplo válido: 'sar', 'saar'."
-  },
-  { 
-    id: 2, 
-    title: 'Protocolo de Telemetría IoT',
-    description: 'Un dispositivo IoT envía paquetes de datos. El paquete debe empezar con un encabezado HDR (h), seguido de cualquier cantidad de lecturas TEMP (t) o HUM (m), y finalizar exclusivamente con un código CRC (c).',
-    alphabet: '{h, t, m, c}',
-    states: '{q0, q1, q2}',
-    initial: 'q0',
-    final: '{q2}',
-    placeholder: 'Ej: httmc',
-    examples: "Ingresa la secuencia del protocolo. Ejemplo válido: 'hc', 'httmc', 'htmc'."
-  },
-  { 
-    id: 3, 
-    title: 'Reconocimiento de Secuencias Genéticas',
-    description: 'Buscamos identificar un patrón en una cadena de aminoácidos: Una Lysina (k), seguida de una Glicina (g), seguida de cualquier aminoácido (x) repetido 0 o más veces, terminando en Fenilalanina (f).',
-    alphabet: '{k, g, f, x}',
-    states: '{q0, q1, q2, q3}',
-    initial: 'q0',
-    final: '{q3}',
-    placeholder: 'Ej: kgxf',
-    examples: "Ingresa la secuencia de aminoácidos. Ejemplo válido: 'kgf', 'kgxf', 'kggfff'."
-  },
-];
+const API_BASE = 'http://localhost:8080/api/automata';
 
 function App() {
   const [activeExercise, setActiveExercise] = useState(1);
-  const [viewMode, setViewMode] = useState('simulator'); 
+  const [viewMode, setViewMode] = useState('simulator'); // 'simulator', 'theory', 'batch', 'code'
   const [inputString, setInputString] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [batchResults, setBatchResults] = useState(null);
 
   const handleEvaluate = async (e) => {
     e.preventDefault();
@@ -53,7 +19,7 @@ function App() {
     setLoading(true);
     setResults(null);
     try {
-      const res = await fetch(`${API_BASE}/${activeExercise}?input=${inputString.trim()}`);
+      const res = await fetch(`${API_BASE}/evaluate/${activeExercise}?input=${inputString.trim()}`);
       if (!res.ok) throw new Error("Error en el servidor");
       const data = await res.json();
       setResults(data);
@@ -65,9 +31,30 @@ function App() {
     }
   };
 
+  const runBatchTest = async () => {
+    setLoading(true);
+    setBatchResults(null);
+    try {
+      const ex = EXERCISES.find(e => e.id === activeExercise);
+      const res = await fetch(`${API_BASE}/batch/${activeExercise}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ex.testBattery)
+      });
+      if (!res.ok) throw new Error("Error en batch");
+      const data = await res.json();
+      setBatchResults(data);
+    } catch (error) {
+      alert("Error ejecutando pruebas masivas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExerciseChange = (id) => {
     setActiveExercise(id);
     setResults(null);
+    setBatchResults(null);
     setInputString('');
   };
 
@@ -94,35 +81,25 @@ function App() {
 
       <main className="main-card">
         <div className="tabs">
-          <button 
-            className={`tab-btn ${viewMode === 'simulator' ? 'active' : ''}`}
-            onClick={() => setViewMode('simulator')}
-          >
+          <button className={`tab-btn ${viewMode === 'simulator' ? 'active' : ''}`} onClick={() => setViewMode('simulator')}>
             Simulador
           </button>
-          <button 
-            className={`tab-btn ${viewMode === 'theory' ? 'active' : ''}`}
-            onClick={() => setViewMode('theory')}
-          >
-            Detalles Teóricos
+          <button className={`tab-btn ${viewMode === 'batch' ? 'active' : ''}`} onClick={() => setViewMode('batch')}>
+            Batería de Pruebas
+          </button>
+          <button className={`tab-btn ${viewMode === 'theory' ? 'active' : ''}`} onClick={() => setViewMode('theory')}>
+            Tablas y Diagramas
           </button>
         </div>
 
         <div className="card-content">
-          {viewMode === 'simulator' ? (
+          {viewMode === 'simulator' && (
             <div className="simulator-view">
               <h2>Evaluación Manual</h2>
               <p className="subtitle">{currentExercise.examples}</p>
               
               <form className="input-form" onSubmit={handleEvaluate}>
-                <input
-                  type="text"
-                  placeholder={currentExercise.placeholder}
-                  value={inputString}
-                  onChange={(e) => setInputString(e.target.value)}
-                  className="string-input"
-                  autoFocus
-                />
+                <input type="text" placeholder={currentExercise.placeholder} value={inputString} onChange={(e) => setInputString(e.target.value)} className="string-input" autoFocus />
                 <button type="submit" className="eval-btn" disabled={loading || !inputString.trim()}>
                   {loading ? 'Evaluando...' : 'Evaluar'}
                 </button>
@@ -137,40 +114,103 @@ function App() {
                     <ResultBox title="AFD Minimizado" isAccepted={results.minimizedAfdResult} path={results.minimizedAfdPath} inputString={inputString} />
                   </div>
                   <div className="conclusion-box">
-                    <strong>¡Equivalencia Comprobada!</strong> Los tres modelos arrojaron el mismo resultado para esta cadena.
+                    <strong>¡Equivalencia Comprobada!</strong> Los tres modelos arrojaron el mismo resultado.
                   </div>
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {viewMode === 'batch' && (
+            <div className="batch-view">
+              <h2>Ejecución de 20 Cadenas de Prueba</h2>
+              <p className="subtitle">Se enviarán 20 cadenas predefinidas para validar la equivalencia de los autómatas en lote.</p>
+              
+              <button onClick={runBatchTest} className="eval-btn" disabled={loading}>
+                {loading ? 'Ejecutando Pruebas...' : 'Ejecutar Batería de Pruebas'}
+              </button>
+
+              {batchResults && (
+                <div className="batch-table-container" style={{marginTop: '2rem'}}>
+                  <table className="theory-table">
+                    <thead>
+                      <tr>
+                        <th>Cadena</th>
+                        <th>AFND</th>
+                        <th>AFD</th>
+                        <th>AFD Min</th>
+                        <th>¿Equivalentes?</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {batchResults.map((r, i) => (
+                        <tr key={i}>
+                          <td style={{fontFamily: 'monospace'}}>{r.input || '(vacía)'}</td>
+                          <td className={r.afndResult ? 'success-text' : 'error-text'}>{r.afndResult ? 'Acepta' : 'Rechaza'}</td>
+                          <td className={r.afdResult ? 'success-text' : 'error-text'}>{r.afdResult ? 'Acepta' : 'Rechaza'}</td>
+                          <td className={r.minimizedAfdResult ? 'success-text' : 'error-text'}>{r.minimizedAfdResult ? 'Acepta' : 'Rechaza'}</td>
+                          <td className="success-text" style={{fontWeight: 'bold'}}>Sí ✓</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'theory' && (
             <div className="theory-view">
-              <h2>Base Teórica: {currentExercise.title}</h2>
+              <h2>Detalles Teóricos: {currentExercise.title}</h2>
               <p style={{marginBottom: '1rem', color: 'var(--text-muted)'}}>{currentExercise.description}</p>
               
               <div className="theory-scroll-area">
                 <section className="theory-section" style={{backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0'}}>
-                  <h3 style={{color: '#1d4ed8'}}>Autómata Finito No Determinista (AFND)</h3>
+                  <h3 style={{color: '#1d4ed8'}}>Autómata Finito No Determinista (AFND) Original</h3>
                   <p><strong>Alfabeto (Σ):</strong> {currentExercise.alphabet}</p>
                   <p><strong>Estados (Q):</strong> {currentExercise.states}</p>
                   <p><strong>Estado Inicial:</strong> {currentExercise.initial} | <strong>Estados de Aceptación (F):</strong> {currentExercise.final}</p>
                   
-                  <details style={{marginTop: '1rem', backgroundColor: 'white', padding: '0.5rem 1rem', borderRadius: '0.25rem', border: '1px solid #cbd5e1'}}>
-                    <summary style={{cursor: 'pointer', fontWeight: 'bold', color: '#2563eb'}}>Ver Tabla de Transiciones δ(Q, Σ)</summary>
-                    <div style={{marginTop: '1rem', padding: '1rem', textAlign: 'center', color: '#64748b'}}>
-                      <em>[Aquí se inyectará la tabla de transiciones del documento]</em>
-                    </div>
-                  </details>
+                  <div className="diagram-container" style={{marginTop: '1.5rem'}}>
+                    <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem'}}>Diagrama JFLAP del AFND:</p>
+                    <img src={`/images/diagrams/afnd_${currentExercise.id}.jpeg`} alt={`Diagrama AFND Ejercicio ${currentExercise.id}`} style={{maxWidth: '100%', border: '1px dashed #cbd5e1', padding: '1rem'}} />
+                  </div>
                 </section>
 
                 <section className="theory-section" style={{marginTop: '2rem'}}>
-                  <h3>Método de Construcción de Subconjuntos</h3>
-                  <p style={{color: '#64748b'}}><em>[Aquí irá la tabla de generación de subconjuntos]</em></p>
+                  <h3>Tabla de Construcción de Subconjuntos (Conversión a AFD)</h3>
+                  <div style={{overflowX: 'auto'}}>
+                    <table className="theory-table">
+                      <thead>
+                        <tr>
+                          {currentExercise.subsetHeaders.map((h, i) => <th key={i}>{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentExercise.subsetTable.map((row, i) => (
+                          <tr key={i}>
+                            {row.map((cell, j) => <td key={j}>{cell}</td>)}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section className="theory-section" style={{marginTop: '2rem'}}>
+                  <h3>Minimización de Hopcroft (Iteraciones)</h3>
+                  <div className="hopcroft-box">
+                    {currentExercise.hopcroftSteps.map((step, i) => (
+                      <p key={i} style={{marginBottom: '0.5rem', fontFamily: 'monospace'}}>{step}</p>
+                    ))}
+                  </div>
                 </section>
                 
                 <section className="theory-section" style={{marginTop: '2rem'}}>
-                  <h3>AFD Minimizado</h3>
-                  <div className="placeholder-image">
-                    <em>[Diagrama JFLAP del autómata]</em>
+                  <h3>Diagrama AFD Minimizado Resultante</h3>
+                  <div className="diagram-container">
+                    <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1rem'}}>Diagrama JFLAP del AFD Minimizado:</p>
+                    <img src={`/images/diagrams/afd_min_${currentExercise.id}.jpeg`} alt={`Diagrama AFD Minimizado Ejercicio ${currentExercise.id}`} style={{maxWidth: '100%', border: '1px dashed #cbd5e1', padding: '1rem'}} />
                   </div>
                 </section>
               </div>

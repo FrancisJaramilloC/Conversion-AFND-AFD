@@ -391,3 +391,60 @@ body {
   font-size: 1.2rem;
   animation: fadeIn 0.3s ease-out;
 }
+
+/* Theory Tables & Code */
+.theory-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background-color: white;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.theory-table th, .theory-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.theory-table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.hopcroft-box {
+  background-color: #f8fafc;
+  border-left: 4px solid var(--primary);
+  padding: 1.5rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.diagram-container {
+  background-color: white;
+  border: 1px solid var(--border);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.code-block {
+  background-color: #1e293b;
+  color: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+}
+
+.success-text {
+  color: var(--success-text);
+}
+.error-text {
+  color: var(--error-text);
+}

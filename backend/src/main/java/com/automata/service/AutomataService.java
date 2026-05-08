@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AutomataService {
@@ -41,5 +43,11 @@ public class AutomataService {
         result.put("minimizedAfdPath", minRes.getPath());
         
         return result;
+    }
+
+    public List<Map<String, Object>> evaluateBatch(int exerciseId, List<String> inputs) {
+        return inputs.stream()
+                .map(input -> evaluateEquivalence(exerciseId, input))
+                .collect(Collectors.toList());
     }
 }
