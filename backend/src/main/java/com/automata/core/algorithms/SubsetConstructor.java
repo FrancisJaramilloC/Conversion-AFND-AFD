@@ -71,9 +71,10 @@ public class SubsetConstructor {
     }
     
     private static String generateName(Set<State> states) {
-        return "{" + states.stream()
+        if (states.isEmpty()) return "SError";
+        return states.stream()
                 .map(State::getName)
                 .sorted()
-                .collect(Collectors.joining(",")) + "}";
+                .collect(Collectors.joining(""));
     }
 }

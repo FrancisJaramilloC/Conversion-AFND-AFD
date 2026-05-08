@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AutomataService {
@@ -24,12 +26,28 @@ public class AutomataService {
         AFD minimizedAfd = HopcroftMinimizer.minimize(afd);
 
         // 4. Evaluar la misma cadena en los 3 autómatas
+        var afndRes = afnd.evaluate(input);
+        var afdRes = afd.evaluate(input);
+        var minRes = minimizedAfd.evaluate(input);
+
         Map<String, Object> result = new HashMap<>();
         result.put("input", input);
-        result.put("afndResult", afnd.accepts(input));
-        result.put("afdResult", afd.accepts(input));
-        result.put("minimizedAfdResult", minimizedAfd.accepts(input));
+        
+        result.put("afndResult", afndRes.isAccepted());
+        result.put("afndPath", afndRes.getPath());
+        
+        result.put("afdResult", afdRes.isAccepted());
+        result.put("afdPath", afdRes.getPath());
+        
+        result.put("minimizedAfdResult", minRes.isAccepted());
+        result.put("minimizedAfdPath", minRes.getPath());
         
         return result;
+    }
+
+    public List<Map<String, Object>> evaluateBatch(int exerciseId, List<String> inputs) {
+        return inputs.stream()
+                .map(input -> evaluateEquivalence(exerciseId, input))
+                .collect(Collectors.toList());
     }
 }

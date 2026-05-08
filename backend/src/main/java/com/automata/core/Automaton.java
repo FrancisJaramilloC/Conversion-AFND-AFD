@@ -11,5 +11,5 @@ public interface Automaton {
     /**
      * Evalúa si la cadena de entrada es aceptada por el autómata.
      */
-    boolean accepts(String input);
+    EvaluationResult evaluate(String input);
 }

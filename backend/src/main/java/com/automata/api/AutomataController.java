@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/automata")
@@ -21,5 +22,10 @@ public class AutomataController {
     @GetMapping("/evaluate/{id}")
     public Map<String, Object> evaluate(@PathVariable int id, @RequestParam String input) {
         return automataService.evaluateEquivalence(id, input);
+    }
+
+    @PostMapping("/batch/{id}")
+    public List<Map<String, Object>> evaluateBatch(@PathVariable int id, @RequestBody List<String> inputs) {
+        return automataService.evaluateBatch(id, inputs);
     }
 }
