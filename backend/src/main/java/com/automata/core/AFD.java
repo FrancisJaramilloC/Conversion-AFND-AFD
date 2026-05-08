@@ -1,10 +1,10 @@
 package com.automata.core;
 
-import lombok.Getter;
+
 import java.util.Set;
 import java.util.List;
+import java.util.ArrayList;
 
-@Getter
 public class AFD implements Automaton {
     private final Set<State> states;
     private final Set<String> alphabet;
@@ -20,9 +20,17 @@ public class AFD implements Automaton {
         this.transitions = transitions;
     }
 
+    public Set<State> getStates() { return states; }
+    public Set<String> getAlphabet() { return alphabet; }
+    public State getInitialState() { return initialState; }
+    public Set<State> getFinalStates() { return finalStates; }
+    public List<Transition> getTransitions() { return transitions; }
+
     @Override
-    public boolean accepts(String input) {
+    public EvaluationResult evaluate(String input) {
         State currentState = initialState;
+        List<String> path = new ArrayList<>();
+        path.add(currentState.getName());
         
         for (char c : input.toCharArray()) {
             String symbol = String.valueOf(c);
@@ -36,11 +44,12 @@ public class AFD implements Automaton {
             }
             
             if (nextState == null) {
-                return false; // Autómata muere si no hay transición explícita
+                return new EvaluationResult(false, path); // Autómata muere si no hay transición explícita
             }
             currentState = nextState;
+            path.add(currentState.getName());
         }
         
-        return currentState.isFinal();
+        return new EvaluationResult(currentState.isFinal(), path);
     }
 }

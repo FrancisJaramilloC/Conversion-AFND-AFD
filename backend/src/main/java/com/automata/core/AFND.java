@@ -1,11 +1,12 @@
 package com.automata.core;
 
-import lombok.Getter;
+
 import java.util.Set;
 import java.util.List;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
-@Getter
 public class AFND implements Automaton {
     private final Set<State> states;
     private final Set<String> alphabet;
@@ -21,10 +22,19 @@ public class AFND implements Automaton {
         this.transitions = transitions;
     }
 
+    public Set<State> getStates() { return states; }
+    public Set<String> getAlphabet() { return alphabet; }
+    public State getInitialState() { return initialState; }
+    public Set<State> getFinalStates() { return finalStates; }
+    public List<Transition> getTransitions() { return transitions; }
+
     @Override
-    public boolean accepts(String input) {
+    public EvaluationResult evaluate(String input) {
         Set<State> currentStates = new HashSet<>();
         currentStates.add(initialState);
+        
+        List<String> path = new ArrayList<>();
+        path.add(stateSetToString(currentStates));
         
         for (char c : input.toCharArray()) {
             String symbol = String.valueOf(c);
@@ -38,11 +48,19 @@ public class AFND implements Automaton {
                 }
             }
             currentStates = nextStates;
+            path.add(stateSetToString(currentStates));
+            
             if (currentStates.isEmpty()) {
-                return false;
+                return new EvaluationResult(false, path);
             }
         }
         
-        return currentStates.stream().anyMatch(State::isFinal);
+        boolean accepted = currentStates.stream().anyMatch(State::isFinal);
+        return new EvaluationResult(accepted, path);
+    }
+    
+    private String stateSetToString(Set<State> states) {
+        if (states.isEmpty()) return "∅";
+        return "{" + states.stream().map(State::getName).sorted().collect(Collectors.joining(",")) + "}";
     }
 }
