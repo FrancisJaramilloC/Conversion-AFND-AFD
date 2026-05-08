@@ -295,54 +295,99 @@ body {
   }
 }
 
-/* Tracker de Ruta */
-.path-tracker {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background-color: var(--bg-main);
-  border: 1px dashed var(--border);
-  border-radius: 0.5rem;
+/* Tracker Desplegable en ResultBox */
+.path-details {
+  margin-top: 1rem;
+  text-align: center;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+  padding-top: 0.75rem;
 }
 
-.path-nodes {
+.toggle-sim-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.toggle-sim-btn:hover {
+  background-color: #eff6ff;
+  text-decoration: underline;
+}
+
+/* Simulador Visual */
+.simulation-player {
+  margin-top: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.sim-path-nodes {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
-.path-step {
+.sim-path-step {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  animation: fadeIn 0.3s ease-out;
 }
 
-.node {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-15px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.sim-node {
   padding: 0.5rem 1rem;
-  background-color: #ffffff;
+  background-color: white;
   border: 2px solid #cbd5e1;
   border-radius: 9999px;
   font-family: monospace;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #334155;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  color: #64748b;
+  transition: all 0.3s ease;
 }
 
-.node.final-accepted {
+.sim-node.active {
+  border-color: var(--primary);
+  background-color: #eff6ff;
+  color: var(--primary);
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.sim-node.consumed {
+  border-color: #94a3b8;
+  color: #475569;
+}
+
+.sim-node.final-accepted {
   background-color: var(--success-bg);
-  border-color: var(--success-border);
+  border-color: var(--success-text);
   color: var(--success-text);
 }
 
-.node.final-rejected {
+.sim-node.final-rejected {
   background-color: var(--error-bg);
-  border-color: var(--error-border);
+  border-color: var(--error-text);
   color: var(--error-text);
 }
 
-.arrow {
+.sim-arrow {
   color: #94a3b8;
-  font-weight: bold;
+  font-size: 1.2rem;
+  animation: fadeIn 0.3s ease-out;
 }

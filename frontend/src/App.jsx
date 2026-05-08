@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './index.css';
 
 const API_BASE = 'http://localhost:8080/api/automata/evaluate';
@@ -6,7 +6,7 @@ const API_BASE = 'http://localhost:8080/api/automata/evaluate';
 const EXERCISES = [
   { 
     id: 1, 
-    title: 'IDS - Detección de Ataques (AFND 1)',
+    title: 'IDS - Detección de Ataques',
     description: 'Se busca detectar un patrón específico de ataque: Un intento de conexión (s), seguido de uno o más respuestas (a), y un reset abrupto (r).',
     alphabet: '{s, a, r}',
     states: '{q0, q1, q2, q3}',
@@ -17,7 +17,7 @@ const EXERCISES = [
   },
   { 
     id: 2, 
-    title: 'Protocolo de Telemetría IoT (AFND 2)',
+    title: 'Protocolo de Telemetría IoT',
     description: 'Un dispositivo IoT envía paquetes de datos. El paquete debe empezar con un encabezado HDR (h), seguido de cualquier cantidad de lecturas TEMP (t) o HUM (m), y finalizar exclusivamente con un código CRC (c).',
     alphabet: '{h, t, m, c}',
     states: '{q0, q1, q2}',
@@ -28,7 +28,7 @@ const EXERCISES = [
   },
   { 
     id: 3, 
-    title: 'Reconocimiento de Secuencias Genéticas (AFND 3)',
+    title: 'Reconocimiento de Secuencias Genéticas',
     description: 'Buscamos identificar un patrón en una cadena de aminoácidos: Una Lysina (k), seguida de una Glicina (g), seguida de cualquier aminoácido (x) repetido 0 o más veces, terminando en Fenilalanina (f).',
     alphabet: '{k, g, f, x}',
     states: '{q0, q1, q2, q3}',
@@ -132,31 +132,13 @@ function App() {
                 <div className="results-container">
                   <h3 className="results-title">Resultados de Equivalencia</h3>
                   <div className="results-grid">
-                    <ResultBox title="AFND Original" isAccepted={results.afndResult} />
-                    <ResultBox title="AFD (Subconjuntos)" isAccepted={results.afdResult} />
-                    <ResultBox title="AFD Minimizado" isAccepted={results.minimizedAfdResult} />
+                    <ResultBox title="AFND Original" isAccepted={results.afndResult} path={results.afndPath} inputString={inputString} />
+                    <ResultBox title="AFD (Subconjuntos)" isAccepted={results.afdResult} path={results.afdPath} inputString={inputString} />
+                    <ResultBox title="AFD Minimizado" isAccepted={results.minimizedAfdResult} path={results.minimizedAfdPath} inputString={inputString} />
                   </div>
                   <div className="conclusion-box">
                     <strong>¡Equivalencia Comprobada!</strong> Los tres modelos arrojaron el mismo resultado para esta cadena.
                   </div>
-                  
-                  {results.minimizedAfdPath && (
-                    <div className="path-tracker">
-                      <h4 style={{marginBottom: '1rem', color: 'var(--primary)', textAlign: 'left', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem'}}>
-                        Traza de Ejecución (AFD Reducido)
-                      </h4>
-                      <div className="path-nodes">
-                        {results.minimizedAfdPath.map((node, index) => (
-                          <div key={index} className="path-step">
-                            <span className={`node ${index === results.minimizedAfdPath.length - 1 ? (results.minimizedAfdResult ? 'final-accepted' : 'final-rejected') : ''}`}>
-                              {node}
-                            </span>
-                            {index < results.minimizedAfdPath.length - 1 && <span className="arrow">➔</span>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -200,13 +182,73 @@ function App() {
   );
 }
 
-function ResultBox({ title, isAccepted }) {
+function ResultBox({ title, isAccepted, path, inputString }) {
   const statusClass = isAccepted ? 'accepted' : 'rejected';
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className={`result-box ${statusClass}`}>
       <h4>{title}</h4>
       <div className="status-label">
         {isAccepted ? '✓ ACEPTADA' : '✗ RECHAZADA'}
+      </div>
+      
+      {path && path.length > 0 && (
+        <div className="path-details">
+          <button className="toggle-sim-btn" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? 'Ocultar simulación ▲' : 'Simular recorrido ▶'}
+          </button>
+          
+          {isOpen && (
+            <SimulationPlayer path={path} inputString={inputString} isAccepted={isAccepted} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimulationPlayer({ path, inputString, isAccepted }) {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    setCurrentStep(0);
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => {
+        if (prev < path.length - 1) {
+          return prev + 1;
+        }
+        clearInterval(interval);
+        return prev;
+      });
+    }, 1200); // 1.2 segundos por paso para que se entienda bien
+    return () => clearInterval(interval);
+  }, [path, inputString]);
+
+  const isFinished = currentStep === path.length - 1;
+
+  return (
+    <div className="simulation-player">
+      <div className="state-label" style={{marginBottom: '1rem'}}>Secuencia de Estados:</div>
+      <div className="sim-path-nodes">
+        {path.map((node, index) => {
+          const isNodeActive = index === currentStep;
+          const isNodeConsumed = index < currentStep;
+          const isNodeVisible = index <= currentStep;
+          
+          if (!isNodeVisible) return null;
+          
+          return (
+            <span key={index} className="sim-path-step">
+              <span className={`sim-node ${isNodeActive ? 'active' : ''} ${isNodeConsumed ? 'consumed' : ''} ${index === path.length - 1 && isFinished ? (isAccepted ? 'final-accepted' : 'final-rejected') : ''}`}>
+                {node}
+              </span>
+              {currentStep > index && (
+                <span className="sim-arrow">➔</span>
+              )}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
