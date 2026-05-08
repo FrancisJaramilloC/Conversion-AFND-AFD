@@ -22,7 +22,25 @@ public class AFD implements Automaton {
 
     @Override
     public boolean accepts(String input) {
-        // Lógica a implementar en el Sprint 2
-        return false;
+        State currentState = initialState;
+        
+        for (char c : input.toCharArray()) {
+            String symbol = String.valueOf(c);
+            State nextState = null;
+            
+            for (Transition t : transitions) {
+                if (t.getSource().equals(currentState) && t.getSymbol().equals(symbol)) {
+                    nextState = t.getDestination();
+                    break;
+                }
+            }
+            
+            if (nextState == null) {
+                return false; // Autómata muere si no hay transición explícita
+            }
+            currentState = nextState;
+        }
+        
+        return currentState.isFinal();
     }
 }

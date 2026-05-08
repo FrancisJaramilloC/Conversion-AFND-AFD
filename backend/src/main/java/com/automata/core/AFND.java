@@ -3,6 +3,7 @@ package com.automata.core;
 import lombok.Getter;
 import java.util.Set;
 import java.util.List;
+import java.util.HashSet;
 
 @Getter
 public class AFND implements Automaton {
@@ -22,7 +23,26 @@ public class AFND implements Automaton {
 
     @Override
     public boolean accepts(String input) {
-        // Lógica a implementar en el Sprint 2
-        return false;
+        Set<State> currentStates = new HashSet<>();
+        currentStates.add(initialState);
+        
+        for (char c : input.toCharArray()) {
+            String symbol = String.valueOf(c);
+            Set<State> nextStates = new HashSet<>();
+            
+            for (State state : currentStates) {
+                for (Transition t : transitions) {
+                    if (t.getSource().equals(state) && t.getSymbol().equals(symbol)) {
+                        nextStates.add(t.getDestination());
+                    }
+                }
+            }
+            currentStates = nextStates;
+            if (currentStates.isEmpty()) {
+                return false;
+            }
+        }
+        
+        return currentStates.stream().anyMatch(State::isFinal);
     }
 }
